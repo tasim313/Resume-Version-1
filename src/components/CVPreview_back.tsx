@@ -1,8 +1,8 @@
-import { useRef, useEffect } from 'react';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import { useRef } from 'react';
+import useReactToPdf from 'react-to-pdf';
 import { CVData, CVSettings } from '@/types/cv';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Download, FileText, Palette } from 'lucide-react';
 import GoogleTemplate from '@/components/templates/GoogleTemplate';
 import FacebookTemplate from '@/components/templates/FacebookTemplate';
@@ -15,7 +15,14 @@ interface CVPreviewProps {
 }
 
 export default function CVPreview({ cvData, settings, updateSettings }: CVPreviewProps) {
+  // Ref for the CV preview container
   const cvRef = useRef<HTMLDivElement>(null);
+
+  // Hook from react-to-pdf
+  const toPDF = useReactToPdf({
+    content: () => cvRef.current,
+    filename: 'my-cv.pdf',
+  }as any);
 
   const renderTemplate = () => {
     const templateProps = { cvData, settings };
@@ -32,49 +39,9 @@ export default function CVPreview({ cvData, settings, updateSettings }: CVPrevie
   };
 
   const handleExportWord = () => {
+    // TODO: integrate with docx library
     alert('Word export functionality would be implemented with docx library');
   };
-
-  const handleDownloadPDF = async () => {
-    if (!cvRef.current) return;
-
-    const cvElement = cvRef.current;
-    const canvas = await html2canvas(cvElement, { scale: 2 });
-    const imgData = canvas.toDataURL('image/png');
-
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-    // Multi-page support
-    let heightLeft = pdfHeight;
-    let position = 0;
-
-    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-    heightLeft -= pdf.internal.pageSize.getHeight();
-
-    while (heightLeft > 0) {
-      position = heightLeft - pdfHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-      heightLeft -= pdf.internal.pageSize.getHeight();
-    }
-
-    pdf.save('my-cv.pdf');
-  };
-
-  // Automatic right-click download
-  useEffect(() => {
-    const handleContextMenu = (e: MouseEvent) => {
-      e.preventDefault();
-      handleDownloadPDF();
-    };
-    const cvContainer = cvRef.current;
-    if (cvContainer) cvContainer.addEventListener('contextmenu', handleContextMenu);
-    return () => {
-      if (cvContainer) cvContainer.removeEventListener('contextmenu', handleContextMenu);
-    };
-  }, []);
 
   const colorOptions = [
     { color: '#2563eb', name: 'Blue' },
@@ -88,7 +55,7 @@ export default function CVPreview({ cvData, settings, updateSettings }: CVPrevie
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
+      {/* Preview Header */}
       <div className="p-6 border-b bg-gray-50">
         <div className="flex justify-between items-center">
           <div>
@@ -96,16 +63,28 @@ export default function CVPreview({ cvData, settings, updateSettings }: CVPrevie
             <p className="text-sm text-gray-600 mt-1">Real-time preview of your CV</p>
           </div>
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" onClick={handleDownloadPDF} className="flex items-center">
-              <Download className="w-4 h-4 mr-2" /> PDF
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toPDF}
+              className="flex items-center"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              PDF
             </Button>
-            <Button variant="outline" size="sm" onClick={handleExportWord} className="flex items-center">
-              <FileText className="w-4 h-4 mr-2" /> Word
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportWord}
+              className="flex items-center"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Word
             </Button>
           </div>
         </div>
 
-        {/* Theme Colors */}
+        {/* Template Controls */}
         <div className="mt-4 flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <Palette className="w-4 h-4 text-gray-600" />
@@ -128,14 +107,16 @@ export default function CVPreview({ cvData, settings, updateSettings }: CVPrevie
           </div>
         </div>
 
-        {/* Background Options */}
+        {/* Additional Theme Options */}
         <div className="mt-3 flex items-center space-x-4">
           <span className="text-sm font-medium text-gray-700">Background:</span>
           <div className="flex space-x-2">
             <button
               onClick={() => updateSettings({ theme: 'light' })}
               className={`px-3 py-1 text-xs rounded-md border transition-colors ${
-                settings.theme === 'light' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                settings.theme === 'light'
+                  ? 'bg-gray-900 text-white border-gray-900'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
               }`}
             >
               Light
@@ -143,7 +124,9 @@ export default function CVPreview({ cvData, settings, updateSettings }: CVPrevie
             <button
               onClick={() => updateSettings({ theme: 'dark' })}
               className={`px-3 py-1 text-xs rounded-md border transition-colors ${
-                settings.theme === 'dark' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                settings.theme === 'dark'
+                  ? 'bg-gray-900 text-white border-gray-900'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
               }`}
             >
               Dark
@@ -152,7 +135,7 @@ export default function CVPreview({ cvData, settings, updateSettings }: CVPrevie
         </div>
       </div>
 
-      {/* CV Content */}
+      {/* Preview Content */}
       <div className="flex-1 overflow-y-auto bg-gray-100 p-6">
         <div className="max-w-4xl mx-auto">
           <div
