@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { useReactToPdf } from 'react-to-pdf';
+import useReactToPdf from 'react-to-pdf';
 import { CVData, CVSettings } from '@/types/cv';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,11 +19,10 @@ export default function CVPreview({ cvData, settings, updateSettings }: CVPrevie
   const cvRef = useRef<HTMLDivElement>(null);
 
   // Hook from react-to-pdf
-  const { toPDF } = useReactToPdf({
+  const toPDF = useReactToPdf({
     content: () => cvRef.current,
     filename: 'my-cv.pdf',
-    page: { margin: 20 }, // optional
-  });
+  }as any);
 
   const renderTemplate = () => {
     const templateProps = { cvData, settings };
