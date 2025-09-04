@@ -1,3 +1,5 @@
+import { useRef } from 'react';
+import { useReactToPdf } from 'react-to-pdf';
 import { CVData, CVSettings } from '@/types/cv';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,9 +15,18 @@ interface CVPreviewProps {
 }
 
 export default function CVPreview({ cvData, settings, updateSettings }: CVPreviewProps) {
+  // Ref for the CV preview container
+  const cvRef = useRef<HTMLDivElement>(null);
+
+  // Hook from react-to-pdf
+  const { toPDF } = useReactToPdf({
+    content: () => cvRef.current,
+    filename: 'my-cv.pdf',
+    page: { margin: 20 }, // optional
+  });
+
   const renderTemplate = () => {
     const templateProps = { cvData, settings };
-    
     switch (settings.selectedTemplate) {
       case 'google':
         return <GoogleTemplate {...templateProps} />;
@@ -28,13 +39,8 @@ export default function CVPreview({ cvData, settings, updateSettings }: CVPrevie
     }
   };
 
-  const handleExportPDF = () => {
-    // This would integrate with a PDF generation library
-    alert('PDF export functionality would be implemented with react-to-pdf or similar library');
-  };
-
   const handleExportWord = () => {
-    // This would integrate with a Word document generation library
+    // TODO: integrate with docx library
     alert('Word export functionality would be implemented with docx library');
   };
 
@@ -61,7 +67,7 @@ export default function CVPreview({ cvData, settings, updateSettings }: CVPrevie
             <Button
               variant="outline"
               size="sm"
-              onClick={handleExportPDF}
+              onClick={toPDF}
               className="flex items-center"
             >
               <Download className="w-4 h-4 mr-2" />
@@ -90,8 +96,8 @@ export default function CVPreview({ cvData, settings, updateSettings }: CVPrevie
                   key={color}
                   onClick={() => updateSettings({ primaryColor: color })}
                   className={`w-7 h-7 rounded-full border-2 transition-all hover:scale-110 ${
-                    settings.primaryColor === color 
-                      ? 'border-gray-800 shadow-md ring-2 ring-gray-300' 
+                    settings.primaryColor === color
+                      ? 'border-gray-800 shadow-md ring-2 ring-gray-300'
                       : 'border-gray-300 hover:border-gray-500'
                   }`}
                   style={{ backgroundColor: color }}
@@ -133,7 +139,8 @@ export default function CVPreview({ cvData, settings, updateSettings }: CVPrevie
       {/* Preview Content */}
       <div className="flex-1 overflow-y-auto bg-gray-100 p-6">
         <div className="max-w-4xl mx-auto">
-          <div 
+          <div
+            ref={cvRef}
             className={`shadow-lg rounded-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl ${
               settings.theme === 'dark' ? 'bg-gray-900' : 'bg-white'
             }`}
